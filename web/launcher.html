@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Chaos — play in your browser</title>
+<meta name="description" content="Urban Chaos in the browser: English and Russian versions.">
+<meta property="og:image" content="capsule.jpg">
+<style>
+  :root { --red: #c8102e; --red2: #ff2a4a; --ink: #e9e6e1; --dim: #8b8d93; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #07080b; color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  html, body { height: 100%; overflow: hidden; }
+  main { height: 100%; justify-content: space-evenly; padding: 2vh 20px !important; gap: 1.4vh !important; }
+  .hero { width: auto !important; height: min(40vh, 435px); max-width: 100%; }
+  .lang { margin-top: 0 !important; }
+  .card { padding: 1.4vh 22px !important; }
+  .info { grid-template-columns: repeat(3, 1fr) !important; max-width: 980px !important; }
+  .box { padding: 1.2vh 14px !important; font-size: 12px !important; line-height: 1.55 !important; }
+  .links a { padding: 7px 16px !important; }
+  footer { line-height: 1.5 !important; font-size: 11px !important; }
+  @media (max-width: 760px), (max-height: 620px) { .info { display: none !important; } }
+  #rain { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .bg { position: fixed; inset: -40px; z-index: -1; background: url(capsule.jpg) center / cover no-repeat;
+    filter: blur(28px) brightness(.28) saturate(1.3); }
+  .vignette { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.85) 100%); }
+  main { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 48px 20px 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 34px; }
+  .hero { position: relative; width: min(100%, 760px); aspect-ratio: 616 / 353; border-radius: 6px; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); animation: rise .9s ease-out both; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.02);
+    animation: drift 18s ease-in-out infinite alternate; }
+  .hero::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(7,8,11,.95)); }
+  .logo { display: none; }
+  .hero.noart { background: radial-gradient(ellipse at 30% 40%, #2a1016, #0b0c10 70%); display: grid; place-items: center; }
+  .hero.noart .logo { display: block; padding: 10px 26px; border: 4px solid #fff; border-radius: 14px; font-size: clamp(30px, 7vw, 64px);
+    font-weight: 800; letter-spacing: 2px; color: #fff; }
+  .hero.noart .logo span { font-weight: 300; }
+  .tag { position: absolute; left: 22px; bottom: 16px; z-index: 1; font-size: 13px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--dim); }
+  .tag b { color: var(--red2); font-weight: 600; }
+  h2 { margin: 0; font-weight: 300; font-size: 15px; letter-spacing: 5px; text-transform: uppercase; color: var(--dim); }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 760px; }
+  .card { position: relative; display: flex; align-items: center; gap: 18px; padding: 22px 24px; text-decoration: none; color: var(--ink);
+    background: linear-gradient(135deg, rgba(25,27,34,.92), rgba(12,13,17,.92)); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 6px; overflow: hidden; transition: transform .18s, border-color .18s, box-shadow .18s;
+    animation: rise .9s ease-out both; }
+  .card:nth-child(2) { animation-delay: .12s; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--red);
+    box-shadow: 0 0 18px var(--red); transition: width .18s; }
+  .card:hover, .card:focus-visible { transform: translateY(-3px); border-color: rgba(200,16,46,.6);
+    box-shadow: 0 14px 40px rgba(200,16,46,.22); outline: none; }
+  .card:hover::before { width: 7px; }
+  .flag { flex: none; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+    font-weight: 800; font-size: 17px; letter-spacing: 1px; background: #15161c; border: 2px solid rgba(255,255,255,.12); }
+  .card .t { font-size: 21px; font-weight: 600; letter-spacing: .5px; }
+  .card .s { font-size: 13px; color: var(--dim); margin-top: 4px; line-height: 1.45; }
+  .card .go { margin-left: auto; font-size: 26px; color: var(--red2); transition: transform .18s; }
+  .card:hover .go { transform: translateX(4px); }
+  .info { width: 100%; max-width: 760px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .box { background: rgba(14,15,19,.82); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; padding: 16px 18px;
+    font-size: 13px; line-height: 1.7; color: #b9b9bd; }
+  .box h3 { margin: 0 0 8px; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--red2); font-weight: 600; }
+  kbd { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 3px; text-align: center; font: 12px/20px Consolas, monospace;
+    background: #23252d; border: 1px solid #353844; border-bottom-width: 2px; color: #eee; }
+  .lang { display: flex; gap: 6px; margin-top: -18px; }
+  .lang button { background: none; border: 1px solid rgba(255,255,255,.14); color: var(--dim); padding: 4px 12px;
+    border-radius: 3px; font: 600 12px/1.4 inherit; letter-spacing: 2px; cursor: pointer; }
+  .lang button.on { color: #fff; border-color: var(--red); background: rgba(200,16,46,.25); }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+  .links a { display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border-radius: 4px; text-decoration: none;
+    color: var(--ink); font-size: 14px; background: rgba(14,15,19,.82); border: 1px solid rgba(255,255,255,.1);
+    transition: border-color .18s, transform .18s; }
+  .links a:hover { border-color: var(--red); transform: translateY(-2px); }
+  .links svg { width: 18px; height: 18px; }
+  footer { font-size: 12px; color: #5e6067; text-align: center; line-height: 1.7; }
+  footer a { color: #8b8d93; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes drift { from { transform: scale(1.02) translateX(0); } to { transform: scale(1.08) translateX(-1.5%); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<canvas id="rain"></canvas>
+<div class="vignette"></div>
+<main>
+  <div class="hero">
+    <img src="capsule.jpg" alt="Urban Chaos" onerror="this.remove(); document.querySelector('.hero').classList.add('noart')">
+    <div class="logo">URBAN <span>CHAOS</span></div>
+    <div class="tag"><b data-i18n="tag"></b></div>
+  </div>
+  <div class="lang"><button data-set="en">EN</button><button data-set="ru">RU</button></div>
+
+  <h2 data-i18n="choose"></h2>
+  <div class="choices">
+    <a class="card" href="game.html?lang=en">
+      <div class="flag">EN</div>
+      <div><div class="t">English</div><div class="s" data-i18n="enDesc"></div></div>
+      <div class="go">›</div>
+    </a>
+    <a class="card" href="game.html?lang=ru">
+      <div class="flag">RU</div>
+      <div><div class="t">Русская</div><div class="s" data-i18n="ruDesc"></div></div>
+      <div class="go">›</div>
+    </a>
+  </div>
+
+  <div class="info">
+    <div class="box">
+      <h3 data-i18n="kbTitle"></h3>
+      <div data-i18n="kb"></div>
+    </div>
+    <div class="box">
+      <h3 data-i18n="padTitle"></h3>
+      <div data-i18n="pad"></div>
+    </div>
+    <div class="box">
+      <h3 data-i18n="touchTitle"></h3>
+      <div data-i18n="touch"></div>
+    </div>
+  </div>
+
+  <div class="links">
+    <a href="https://github.com/Carter54git" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub · Carter54git</a>
+    <a href="https://t.me/gamebase54" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.78 15.27 9.4 20.6c.54 0 .78-.23 1.06-.51l2.55-2.44 5.28 3.87c.97.53 1.65.25 1.91-.89l3.47-16.24c.31-1.43-.52-1.99-1.46-1.64L1.8 10.6c-1.4.54-1.38 1.33-.24 1.68l5.22 1.63L18.9 6.3c.57-.38 1.09-.17.66.21z"/></svg>
+      Telegram · @gamebase54</a>
+  </div>
+
+  <footer>
+    <span data-i18n="engine"></span> <a href="https://github.com/UltimaBeaR/OpenChaos" target="_blank" rel="noopener">OpenChaos</a>.<br>
+    <span data-i18n="rights"></span>
+  </footer>
+</main>
+<script>
+const TEXT = {
+  en: {
+    title: 'Urban Chaos — play in your browser', tag: 'browser edition', choose: 'Choose a version',
+    enDesc: 'Original release: English text and voice acting',
+    ruDesc: 'Russian translation: text, voices and cutscenes',
+    kbTitle: 'Keyboard & mouse',
+    kb: '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · mouse — camera<br>LMB punch · RMB kick<br>' +
+      '<kbd>Space</kbd> jump · <kbd>Shift</kbd> run<br><kbd>F</kbd> use · <kbd>C</kbd> sneak · <kbd>E</kbd> aim<br>' +
+      '<kbd>1</kbd>–<kbd>4</kbd> weapons · <kbd>Esc</kbd> pause · <kbd>F11</kbd> fullscreen',
+    padTitle: 'Gamepad',
+    pad: 'Xbox, PlayStation and other controllers via the browser Gamepad API.<br>Left stick — move, right stick — camera, ' +
+      'A jump, B run, X use, Y sneak, RT punch, RB kick, LB aim. Press any button once if it is not detected.',
+    touchTitle: 'Touch screen',
+    touch: 'Phones and tablets get on-screen controls automatically: left half — floating stick, right half — drag to look, ' +
+      'action buttons on the right, D-pad for weapons and menus. Play in landscape; tap a cutscene to skip it.',
+    tipsTitle: 'Good to know',
+    tips: 'Resources are streamed while you play, so the first load of a level takes a bit longer. ' +
+      'Saves and settings are stored in your browser. Requires WebGL2 (any current Chrome, Edge, Firefox or Safari).',
+    engine: 'Engine:', rights: 'Urban Chaos © Mucky Foot Productions / Eidos Interactive. All game rights belong to their owners.',
+  },
+  ru: {
+    title: 'Urban Chaos — играть в браузере', tag: 'браузерная версия', choose: 'Выберите версию',
+    enDesc: 'Оригинальная версия: английский текст и озвучка',
+    ruDesc: 'Русификатор: перевод текста, озвучки и роликов',
+    kbTitle: 'Клавиатура и мышь',
+    kb: '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> движение · мышь — камера<br>ЛКМ удар рукой · ПКМ ногой<br>' +
+      '<kbd>Space</kbd> прыжок · <kbd>Shift</kbd> бег<br><kbd>F</kbd> действие · <kbd>C</kbd> красться · <kbd>E</kbd> прицел<br>' +
+      '<kbd>1</kbd>–<kbd>4</kbd> оружие · <kbd>Esc</kbd> пауза · <kbd>F11</kbd> полный экран',
+    padTitle: 'Геймпад',
+    pad: 'Xbox, PlayStation и другие контроллеры через Gamepad API браузера.<br>Левый стик — движение, правый — камера, ' +
+      'A прыжок, B бег, X действие, Y красться, RT удар, RB удар ногой, LB прицел. Если не определился — нажмите любую кнопку.',
+    touchTitle: 'Сенсорный экран',
+    touch: 'На телефонах и планшетах экранное управление включается само: левая половина — плавающий стик, правая — обзор, ' +
+      'кнопки действий справа, крестовина — оружие и меню. Играйте горизонтально; тап по ролику — пропуск.',
+    tipsTitle: 'Полезно знать',
+    tips: 'Ресурсы подгружаются по ходу игры — первый запуск уровня чуть дольше. ' +
+      'Сохранения и настройки хранятся в браузере. Нужен WebGL2 (любой свежий Chrome, Edge, Firefox или Safari).',
+    engine: 'Движок:', rights: 'Urban Chaos © Mucky Foot Productions / Eidos Interactive. Все права на игру принадлежат правообладателям.',
+  },
+};
+function setLang(l) {
+  const t = TEXT[l];
+  document.documentElement.lang = l;
+  document.title = t.title;
+  for (const el of document.querySelectorAll('[data-i18n]')) el.innerHTML = t[el.dataset.i18n];
+  for (const b of document.querySelectorAll('[data-set]')) b.classList.toggle('on', b.dataset.set === l);
+  try { localStorage.setItem('oc-launcher-lang', l); } catch (e) {}
+}
+for (const b of document.querySelectorAll('[data-set]')) b.addEventListener('click', () => setLang(b.dataset.set));
+let saved = null;
+try { saved = localStorage.getItem('oc-launcher-lang'); } catch (e) {}
+setLang(saved || ((navigator.language || '').toLowerCase().startsWith('ru') ? 'ru' : 'en'));
+
+// Rain: a few hundred slanted streaks, cheap enough for weak laptops.
+(() => {
+  const c = document.getElementById('rain');
+  const g = c.getContext('2d');
+  const DROPS = 260;
+  let w, h, drops;
+  function resize() {
+    w = c.width = innerWidth;
+    h = c.height = innerHeight;
+    drops = Array.from({ length: DROPS }, () => ({ x: Math.random() * w, y: Math.random() * h, l: 8 + Math.random() * 18, v: 9 + Math.random() * 10 }));
+  }
+  resize();
+  addEventListener('resize', resize);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  (function frame() {
+    g.clearRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(170,190,220,.22)';
+    g.lineWidth = 1;
+    g.beginPath();
+    for (const d of drops) {
+      g.moveTo(d.x, d.y);
+      g.lineTo(d.x - d.l * .25, d.y + d.l);
+      d.y += d.v;
+      d.x -= d.v * .25;
+      if (d.y > h) { d.y = -20; d.x = Math.random() * (w + 200); }
+    }
+    g.stroke();
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

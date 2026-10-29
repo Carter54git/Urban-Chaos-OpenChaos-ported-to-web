@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Chaos · Web — browser port</title>
+<meta name="description" content="Urban Chaos (1999) in the browser on the OpenChaos engine compiled to WebAssembly. Requires your own copy of the game.">
+<style>
+  :root { --red: #c8102e; --red2: #ff2a4a; --ink: #e9e6e1; --dim: #8d9097; --card: rgba(16,17,22,.9); }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #07080b; color: var(--ink); font: 15px/1.65 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  a { color: var(--red2); }
+  #rain { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  header, section, footer { position: relative; z-index: 1; }
+  header { min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 60px 20px;
+    background: radial-gradient(ellipse at 50% 35%, rgba(200,16,46,.22), transparent 60%),
+                linear-gradient(180deg, #0c0d12, #07080b); }
+  .logo { display: inline-block; padding: 10px 30px; border: 5px solid #fff; border-radius: 16px;
+    font-size: clamp(40px, 9vw, 92px); font-weight: 800; letter-spacing: 3px; line-height: 1.1;
+    box-shadow: 0 0 60px rgba(255,255,255,.08); animation: flicker 6s infinite; }
+  .logo span { font-weight: 300; }
+  .sub { margin: 22px 0 0; font-size: 13px; letter-spacing: 6px; text-transform: uppercase; color: var(--dim); }
+  .sub b { color: var(--red2); font-weight: 600; }
+  .lead { max-width: 620px; margin: 26px auto 0; font-size: 17px; color: #c6c6ca; }
+  .btns { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 13px 28px; border-radius: 4px; text-decoration: none; font-weight: 600; letter-spacing: .5px; transition: .18s; }
+  .btn.p { background: var(--red); color: #fff; box-shadow: 0 8px 30px rgba(200,16,46,.35); }
+  .btn.p:hover { background: var(--red2); transform: translateY(-2px); }
+  .btn.s { border: 1px solid rgba(255,255,255,.2); color: var(--ink); }
+  .btn.s:hover { border-color: #fff; }
+  section { max-width: 1000px; margin: 0 auto; padding: 70px 20px; }
+  h2 { margin: 0 0 28px; font-size: 13px; letter-spacing: 5px; text-transform: uppercase; color: var(--red2); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid rgba(255,255,255,.07); border-radius: 6px; padding: 20px 22px; position: relative; overflow: hidden; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--red); }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: #a9aab0; font-size: 14px; }
+  .warn { border: 1px solid rgba(200,16,46,.45); background: rgba(200,16,46,.08); border-radius: 6px; padding: 18px 22px; color: #e6c9cd; }
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+  ol.steps li { counter-increment: s; background: var(--card); border: 1px solid rgba(255,255,255,.07); border-radius: 6px; padding: 20px 22px 20px 74px; position: relative; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 22px; top: 18px; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; font-weight: 800; background: #1b1c23; border: 2px solid var(--red); color: #fff; }
+  ol.steps h3 { margin: 0 0 6px; font-size: 16px; }
+  ol.steps p { margin: 0 0 8px; color: #a9aab0; }
+  pre { margin: 8px 0 0; padding: 12px 14px; background: #0b0c10; border: 1px solid #22242c; border-radius: 4px; overflow-x: auto;
+    font: 13px/1.5 Consolas, "JetBrains Mono", monospace; color: #e5e5e5; }
+  code { font-family: Consolas, monospace; color: #ffb3bf; }
+  pre code { color: inherit; }
+  .tree { white-space: pre; }
+  footer { text-align: center; padding: 40px 20px 60px; color: #5f6168; font-size: 13px; line-height: 1.8; }
+  footer a { color: #8d9097; }
+  @keyframes flicker { 0%, 92%, 100% { opacity: 1; } 93% { opacity: .55; } 94% { opacity: 1; } 96% { opacity: .75; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+
+<header>
+  <div>
+    <div class="logo">URBAN <span>CHAOS</span></div>
+    <p class="sub">1999 · <b>WebAssembly</b> · WebGL2</p>
+    <p class="lead">The classic Mucky Foot action game, running right in a browser tab.
+      The OpenChaos engine compiled to WebAssembly: the full game with cutscenes, sound and saves, nothing to install.</p>
+    <div class="btns">
+      <a class="btn p" href="#setup">How to run it</a>
+      <a class="btn s" href="https://github.com/UltimaBeaR/OpenChaos" target="_blank" rel="noopener">OpenChaos engine</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <h2>Features</h2>
+  <div class="grid">
+    <div class="card"><h3>The whole game</h3><p>Every mission, with physics and logic identical to the original: same engine, just built for the browser.</p></div>
+    <div class="card"><h3>EN and RU</h3><p>A launcher to pick the version. The Russian translation is a layer on top: only the files that differ are uploaded.</p></div>
+    <div class="card"><h3>Cutscenes</h3><p>Bink videos are transcoded to MP4 and play over the game; skip with Esc or a tap.</p></div>
+    <div class="card"><h3>Gamepads</h3><p>Xbox, PlayStation and generic controllers through the browser Gamepad API.</p></div>
+    <div class="card"><h3>Touch controls</h3><p>Phones and tablets get a floating stick, look-by-drag and action buttons, fed to the game as a virtual gamepad.</p></div>
+    <div class="card"><h3>Streaming</h3><p>Game files are downloaded only when needed, so startup is fast.</p></div>
+    <div class="card"><h3>Saves</h3><p>Progress and settings live in IndexedDB and survive page reloads.</p></div>
+    <div class="card"><h3>Any host</h3><p>The output is plain static files: Apache, nginx, S3, any file host.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="warn"><b>Game files are not distributed.</b> The repository contains only the engine and the web wrapper.
+    To play you need your own legal copy of Urban Chaos: CD, Steam or GOG.</div>
+</section>
+
+<section id="setup">
+  <h2>Up and running in 4 steps</h2>
+  <ol class="steps">
+    <li><h3>Engine</h3>
+      <p>Download <code>openchaos.js</code> and <code>openchaos.wasm</code> from Releases into <code>web/dist/</code>, or build them yourself (Emscripten SDK + CMake):</p>
+      <pre><code>powershell -ExecutionPolicy Bypass -File web\build.ps1   # Windows
+./web/build.sh                                           # Linux / macOS</code></pre></li>
+    <li><h3>Game files</h3>
+      <p>You need an installed game folder (with <code>clumps/</code>, <code>levels/</code>, <code>talk2/</code>, <code>text/</code>…). For Steam it is <code>steamapps/common/Urban Chaos</code>.
+        The Russian version additionally needs the translation folder with the same layout.</p></li>
+    <li><h3>Build the site</h3>
+      <p>Node.js 18+ and FFmpeg (for cutscenes):</p>
+      <pre><code>node web/tools/prepare.js --game "path/to/Urban Chaos" --rus "path/to/translation" --out site</code></pre>
+      <pre class="tree"><code>site/
+├─ index.html          launcher
+├─ game.html           game
+├─ touch.js            touch controls
+├─ openchaos.js/.wasm  engine
+├─ manifest_en.json    manifest_ru.json
+└─ data/
+   ├─ en/              game files
+   └─ ru/              translation files only</code></pre></li>
+    <li><h3>Run</h3>
+      <p>Test locally, then upload the contents of <code>site/</code> to your host:</p>
+      <pre><code>node web/tools/serve.js site 8080   →   http://localhost:8080/</code></pre>
+      <p>For nginx add <code>types { application/wasm wasm; }</code>; for Apache everything is already in <code>.htaccess</code>.</p></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Under the hood</h2>
+  <div class="grid">
+    <div class="card"><h3>WebGL2</h3><p>The OpenGL 4.1 renderer runs on WebGL2: shaders are translated to GLSL ES 3.00 and missing texture formats are emulated.</p></div>
+    <div class="card"><h3>Asyncify</h3><p>The blocking game loop yields each frame to the browser via <code>requestAnimationFrame</code> without rewriting the game logic.</p></div>
+    <div class="card"><h3>Lazy file system</h3><p>Opening a file in the game transparently becomes a <code>fetch</code>; file-name case is resolved through a manifest.</p></div>
+    <div class="card"><h3>SDL3 + OpenAL</h3><p>Input, window and audio come from the Emscripten ports on top of WebAudio.</p></div>
+  </div>
+</section>
+
+<footer>
+  Urban Chaos © 1999 Mucky Foot Productions / Eidos Interactive. All game rights belong to their owners.<br>
+  Game source: <a href="https://github.com/dizzy2003/MuckyFoot-UrbanChaos">MuckyFoot-UrbanChaos</a> (MIT) ·
+  Engine: <a href="https://github.com/UltimaBeaR/OpenChaos">OpenChaos</a> (MIT) · Web port: MIT<br>
+  <a href="https://github.com/Carter54git">github.com/Carter54git</a> · <a href="https://t.me/gamebase54">Telegram: @gamebase54</a>
+</footer>
+
+<script>
+(() => {
+  const c = document.getElementById('rain'), g = c.getContext('2d'), N = 200;
+  let w, h, d;
+  function rs() { w = c.width = innerWidth; h = c.height = innerHeight;
+    d = Array.from({ length: N }, () => ({ x: Math.random() * w, y: Math.random() * h, l: 8 + Math.random() * 16, v: 8 + Math.random() * 9 })); }
+  rs(); addEventListener('resize', rs);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  (function f() {
+    g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(170,190,220,.16)'; g.beginPath();
+    for (const p of d) { g.moveTo(p.x, p.y); g.lineTo(p.x - p.l * .25, p.y + p.l); p.y += p.v; p.x -= p.v * .25;
+      if (p.y > h) { p.y = -20; p.x = Math.random() * (w + 200); } }
+    g.stroke(); requestAnimationFrame(f);
+  })();
+})();
+</script>
+</body>
+</html>

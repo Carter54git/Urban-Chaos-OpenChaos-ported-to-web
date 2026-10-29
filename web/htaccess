@@ -1,0 +1,10 @@
+# Apache: correct MIME type and compression for the WebAssembly engine.
+AddType application/wasm .wasm
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/wasm text/javascript application/javascript application/json text/html
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/wasm "access plus 1 day"
+  ExpiresByType video/mp4 "access plus 30 days"
+</IfModule>
